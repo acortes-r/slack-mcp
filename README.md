@@ -77,7 +77,9 @@ claude mcp add slack-propio --scope user -e SLACK_TOKEN=xoxp-... \
   -- ~/Projects/Personal/slack-mcp/.venv/bin/python ~/Projects/Personal/slack-mcp/server.py
 ```
 
-En el modo de permisos por defecto, Claude Code pide permiso antes de cada llamada a una tool
-MCP, así que ves el mensaje antes de que salga. No agregues `mcp__slack-propio__*` a la
-allowlist si quieres conservar esa vista previa; en modo auto o bypass esa pausa puede no
-ocurrir.
+## Confirmación antes de escribir
+
+Las tools de lectura se marcan con `readOnlyHint` y las de escritura (`send_message`,
+`upload_file`) no; cada cliente decide con eso cuándo pedirte permiso, y no todos lo hacen.
+Si tu cliente ejecuta las tools sin preguntar, o solo quieres leer, arranca el servidor con
+`SLACK_READ_ONLY=1`: las tools de escritura ni siquiera se registran.

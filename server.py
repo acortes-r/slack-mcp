@@ -8,6 +8,7 @@ from urllib.parse import parse_qs, urlparse
 
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
+from mcp.types import ToolAnnotations
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
@@ -24,6 +25,13 @@ mcp = MCPServer(
         "se acepta su permalink. Las fechas aceptan ISO ('2026-11-01', '2026-11-01T09:00') o un ts de Slack."
     ),
 )
+
+# Los clientes MCP usan estas pistas para decidir cuándo pedir confirmación.
+READS = ToolAnnotations(read_only_hint=True, open_world_hint=True)
+WRITES = ToolAnnotations(read_only_hint=False, destructive_hint=False, open_world_hint=True)
+READ_ONLY = os.environ.get("SLACK_READ_ONLY", "").lower() in ("1", "true", "yes")
+# Con SLACK_READ_ONLY=1 las tools de escritura no se registran.
+write_tool = (lambda f: f) if READ_ONLY else mcp.tool(annotations=WRITES)
 
 CHANNEL_ID = re.compile(r"^[CGD][A-Z0-9]{6,}$")
 PERMALINK = re.compile(r"/archives/([A-Z0-9]+)/p(\d{10})(\d{6})")
@@ -154,7 +162,7 @@ def _paginate(method, key: str, limit: int, **kwargs) -> list[dict]:
     return items[:limit]
 
 
-@mcp.tool()
+@mcp.tool(annotations=READS)
 def list_conversations(
     query: str | None = None,
     kinds: str = "public_channel,private_channel",
@@ -185,7 +193,7 @@ def list_conversations(
     return out
 
 
-@mcp.tool()
+@mcp.tool(annotations=READS)
 def read_conversation(
     conversation: str,
     since: str | None = None,
@@ -207,7 +215,7 @@ def read_conversation(
     return [_message(m, channel) for m in reversed(msgs)]
 
 
-@mcp.tool()
+@mcp.tool(annotations=READS)
 def read_thread(thread: str, conversation: str | None = None, limit: int = 200) -> list[dict]:
     """Lee un hilo completo: el mensaje padre y sus respuestas.
 
@@ -218,7 +226,7 @@ def read_thread(thread: str, conversation: str | None = None, limit: int = 200) 
     return [_message(m, channel) for m in msgs]
 
 
-@mcp.tool()
+@mcp.tool(annotations=READS)
 def search_messages(query: str, count: int = 20, sort: str = "timestamp") -> list[dict]:
     """Busca mensajes en todo Slack (requiere user token).
 
@@ -236,7 +244,7 @@ def search_messages(query: str, count: int = 20, sort: str = "timestamp") -> lis
     return out
 
 
-@mcp.tool()
+@mcp.tool(annotations=READS)
 def get_user(user: str) -> dict:
     """Perfil de una persona. user: su ID (U…) o su correo."""
     if "@" in user:
@@ -255,7 +263,7 @@ def get_user(user: str) -> dict:
     }
 
 
-@mcp.tool()
+@write_tool
 def send_message(text: str, destination: str | None = None, thread: str | None = None) -> dict:
     """Envía un mensaje a Slack (acepta mrkdwn de Slack: *negrita*, _cursiva_, `código`, <url|texto>).
 
@@ -268,7 +276,7 @@ def send_message(text: str, destination: str | None = None, thread: str | None =
     return {"channel": channel, "ts": r["ts"], "permalink": link}
 
 
-@mcp.tool()
+@write_tool
 def upload_file(
     path: str,
     destination: str | None = None,
