@@ -307,5 +307,9 @@ def upload_file(
     return {"channel": channel, "file_id": info["id"], "permalink": info.get("permalink")}
 
 
-if __name__ == "__main__":
+def main():
     mcp.run()
+
+
+if __name__ == "__main__":
+    main()

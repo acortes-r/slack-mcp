@@ -1,0 +1,20 @@
+[project]
+name = "slack-mcp"
+version = "0.1.0"
+description = "MCP propio para leer y escribir en Slack desde cualquier cliente MCP"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=2.3,<3",
+    "slack-sdk>=3.46,<4",
+]
+
+[project.scripts]
+slack-mcp = "server:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["server"]

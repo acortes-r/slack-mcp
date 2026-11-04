@@ -1,6 +1,6 @@
 # slack-mcp
 
-MCP propio para leer y escribir en Slack desde Claude Code.
+MCP propio para leer y escribir en Slack desde cualquier cliente MCP (Claude Code, Claude Desktop, Cursor, Codex, Gemini CLI, VS Code, OpenCode…).
 
 ## Tools
 
@@ -65,16 +65,82 @@ de un solo workspace.
 
 ## 2. Instalar
 
+Necesitas Python 3.10 o superior. Cualquiera de estas deja disponible el comando `slack-mcp`:
+
 ```sh
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
+pipx install git+https://github.com/acortes-r/slack-mcp
+# o
+uv tool install git+https://github.com/acortes-r/slack-mcp
 ```
 
-## 3. Registrar en Claude Code
+Para no instalar nada, los clientes también pueden lanzarlo con
+`uvx --from git+https://github.com/acortes-r/slack-mcp slack-mcp`.
+
+Las apps de escritorio (Claude Desktop, Cursor) a veces no heredan el `PATH` de tu shell; si
+no encuentran `slack-mcp`, usa la ruta absoluta que da `which slack-mcp`.
+
+## 3. Registrar en tu cliente MCP
+
+Es un servidor MCP estándar por **stdio**. En cualquier cliente se configura igual:
+
+- comando: `slack-mcp`
+- variables de entorno: `SLACK_TOKEN` (obligatoria) y `SLACK_READ_ONLY=1` (opcional)
+
+**Claude Code**
 
 ```sh
-claude mcp add slack-propio --scope user -e SLACK_TOKEN=xoxp-... \
-  -- ~/Projects/Personal/slack-mcp/.venv/bin/python ~/Projects/Personal/slack-mcp/server.py
+claude mcp add slack --scope user -e SLACK_TOKEN=xoxp-... -- slack-mcp
+```
+
+**Claude Desktop, Cursor y Gemini CLI**: el mismo bloque en
+`~/Library/Application Support/Claude/claude_desktop_config.json`, `~/.cursor/mcp.json` o
+`~/.gemini/settings.json`, respectivamente:
+
+```json
+{
+  "mcpServers": {
+    "slack": {
+      "command": "slack-mcp",
+      "env": { "SLACK_TOKEN": "xoxp-..." }
+    }
+  }
+}
+```
+
+**Codex** (`~/.codex/config.toml`)
+
+```toml
+[mcp_servers.slack]
+command = "slack-mcp"
+env = { SLACK_TOKEN = "xoxp-..." }
+```
+
+**VS Code** (`.vscode/mcp.json`)
+
+```json
+{
+  "servers": {
+    "slack": {
+      "type": "stdio",
+      "command": "slack-mcp",
+      "env": { "SLACK_TOKEN": "xoxp-..." }
+    }
+  }
+}
+```
+
+**OpenCode** (`opencode.json`)
+
+```json
+{
+  "mcp": {
+    "slack": {
+      "type": "local",
+      "command": ["slack-mcp"],
+      "environment": { "SLACK_TOKEN": "xoxp-..." }
+    }
+  }
+}
 ```
 
 ## Confirmación antes de escribir
@@ -83,3 +149,11 @@ Las tools de lectura se marcan con `readOnlyHint` y las de escritura (`send_mess
 `upload_file`) no; cada cliente decide con eso cuándo pedirte permiso, y no todos lo hacen.
 Si tu cliente ejecuta las tools sin preguntar, o solo quieres leer, arranca el servidor con
 `SLACK_READ_ONLY=1`: las tools de escritura ni siquiera se registran.
+
+## Desarrollo
+
+```sh
+python3 -m venv .venv
+.venv/bin/pip install -e .
+SLACK_TOKEN=xoxp-... .venv/bin/slack-mcp
+```
